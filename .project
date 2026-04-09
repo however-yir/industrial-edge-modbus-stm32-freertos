@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>Modbus-STM32-HAL-FreeRTOS</name>
+	<name>IndustrialEdgeModbusSTM32</name>
 	<comment></comment>
 	<projects>
 	</projects>

@@ -1,0 +1,18 @@
+<svg width="880" height="220" viewBox="0 0 880 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="880" y2="220" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B2A3C"/>
+      <stop offset="1" stop-color="#0F5A7A"/>
+    </linearGradient>
+    <linearGradient id="chip" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#22D3EE"/>
+      <stop offset="1" stop-color="#06B6D4"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="880" height="220" rx="24" fill="url(#bg)"/>
+  <rect x="34" y="34" width="152" height="152" rx="18" fill="#0A1620" stroke="#22D3EE" stroke-width="2"/>
+  <rect x="64" y="64" width="92" height="92" rx="12" fill="url(#chip)"/>
+  <path d="M20 82H34M20 110H34M20 138H34M186 82H200M186 110H200M186 138H200" stroke="#67E8F9" stroke-width="4" stroke-linecap="round"/>
+  <text x="234" y="96" fill="#E6F9FF" font-size="46" font-family="Arial, Helvetica, sans-serif" font-weight="700">Industrial Edge Modbus</text>
+  <text x="234" y="148" fill="#A5F3FC" font-size="28" font-family="Arial, Helvetica, sans-serif">STM32 + FreeRTOS Communication Middleware</text>
+</svg>

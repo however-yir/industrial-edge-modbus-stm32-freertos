@@ -1,0 +1,20 @@
+# Repository metadata template
+# Can be applied manually or by GitHub Settings app.
+repository:
+  name: industrial-edge-modbus-stm32-freertos
+  description: Industrial Edge Modbus Middleware for STM32 + FreeRTOS (RTU/TCP/USB-CDC, Master/Slave, RS485, DMA)
+  private: false
+  has_issues: true
+  has_projects: true
+  has_wiki: true
+  default_branch: master
+  topics:
+    - stm32
+    - freertos
+    - modbus
+    - modbus-rtu
+    - modbus-tcp
+    - rs485
+    - industrial-communication
+    - embedded-systems
+    - dma

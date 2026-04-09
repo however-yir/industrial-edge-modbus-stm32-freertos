@@ -1,213 +1,264 @@
-# Sponsoring
+# 工业边缘 Modbus 通信中间件 | Industrial Edge Modbus Middleware for STM32 + FreeRTOS
 
-If you found this library useful or if you have used it in a commercial product, please consider supporting my work 
-or buying me a coffee: 
+🔥 面向工业现场的 STM32 + FreeRTOS Modbus 中间件工程（RTU/TCP/USB-CDC，主站+从站，多实例并发）。  
+🚀 支持 RS232 / RS485、DMA 高波特率、可裁剪内存模型与多板卡示例。  
+⭐ 适合作为工业通信网关、设备控制器、课程设计与二次开发底座。
 
-[:heart: sponsor](https://github.com/sponsors/alejoseb) 
+<p align="center">
+  <img src="./docs/assets/logo.svg" alt="Industrial Edge Modbus" width="420" />
+</p>
 
-[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/alejoseb)
+<p align="center">
+  <img src="https://img.shields.io/badge/MCU-STM32-blue" alt="STM32" />
+  <img src="https://img.shields.io/badge/RTOS-FreeRTOS-1f6feb" alt="FreeRTOS" />
+  <img src="https://img.shields.io/badge/Protocol-Modbus%20RTU%20%7C%20TCP-orange" alt="Modbus" />
+  <img src="https://img.shields.io/badge/Driver-HAL-2da44e" alt="HAL" />
+  <img src="https://img.shields.io/badge/Language-C%20%2F%20Python-lightgrey" alt="C and Python" />
+</p>
 
-[!["Paypal"](https://github.com/alejoseb/Modbus-STM32-HAL-FreeRTOS/blob/master/.github/paypal.png)](https://www.paypal.com/donate/?business=ADTEDK5JHVZ22&no_recurring=0&item_name=I+have+contributed+libraries+for+embedded.+If+you+find+any+of+my+open-source+projects+useful+please+consider+supporting+me.%0A&currency_code=USD)[Paypal](https://www.paypal.com/donate/?business=ADTEDK5JHVZ22&no_recurring=0&item_name=I+have+contributed+libraries+for+embedded.+If+you+find+any+of+my+open-source+projects+useful+please+consider+supporting+me.%0A&currency_code=USD)
+---
 
-I also provide consultations at different sponsoring tiers, thanks!
+## 目录
 
+- [1. 项目定位](#1-项目定位)
+- [2. 核心能力](#2-核心能力)
+- [3. 典型应用场景](#3-典型应用场景)
+- [4. 架构与线程模型](#4-架构与线程模型)
+- [5. 仓库结构](#5-仓库结构)
+- [6. 快速开始](#6-快速开始)
+- [7. 配置说明](#7-配置说明)
+- [8. 示例导入与运行](#8-示例导入与运行)
+- [9. 测试脚本说明](#9-测试脚本说明)
+- [10. 与基础版本的差异](#10-与基础版本的差异)
+- [11. 版本规划](#11-版本规划)
+- [12. 开发协议与许可](#12-开发协议与许可)
 
-# Modbus library for STM32 Microcontrollers
-TCP, USART and USB-CDC Modbus RTU Master and Slave library for STM32 microcontrollers 
-based on Cube HAL and FreeRTOS.
+---
 
-Includes multiple examples for popular development boards including BluePill, NUCLEO-64, 
-NUCLEO-144 and Discovery Boards (Cortex-M3/M4/M7).
+## 1. 项目定位
 
-This is a port of the Modbus library for Arduino: https://github.com/smarmengol/Modbus-Master-Slave-for-Arduino
+本仓库聚焦“工业通信中间件工程化”，目标不是只提供协议解析函数，而是给出可直接导入 STM32CubeIDE 的完整主站/从站项目模板，帮助你快速落地以下能力：
 
-Video demo for STM32F4-discovery board and TouchGFX: https://youtu.be/XDCQvu0LirY
+1. 多设备并行通信（同 MCU 内多实例）
+2. RTU、TCP、USB-CDC 多链路统一抽象
+3. 适配 RS232、RS485 现场总线
+4. 基于 FreeRTOS 的线程安全通信任务
+5. 高波特率场景下的 DMA 收发与空闲中断配合
 
-`NEW` Separate memory regions per data type with configurable start addresses, while remaining fully backward-compatible with the legacy shared memory model
+如果你希望把本仓库作为“自己的工业通信基础仓库”，当前结构已经支持按板卡、按功能、按协议逐步扩展。
 
-`NEW` Script examples to test the library based on Pymodbus
+---
 
-`NEW` TCP slave (server) multi-client with configurable auto-aging algorithm for management of TCP connections
+## 2. 核心能力
 
+### 2.1 协议与角色
 
-## Translations supported by the community:
-Traditional Chinese: [繁體中文](TraditionalChineseREADME.md) 
+- Modbus RTU 主站 / 从站
+- Modbus TCP 主站 / 从站
+- USB-CDC RTU 主站 / 从站（特定板卡示例）
 
-## Characteristics:
-- Portable to any STM32 MCU supported by ST Cube HAL.
-- Portable to other Microcontrollers, like the [Raspberry PI Pico](https://github.com/alejoseb/Modbus-PI-Pico-FreeRTOS), requiring little engineering effort.
-- Multithread-safe implementation based on FreeRTOS. 
-- Multiple instances of Modbus (Master and/or Slave) can run concurrently in the same MCU,
-  only limited by the number of available UART/USART of the MCU.
-- Flexible memory model: shared memory space (legacy) or separate independent memory regions per data type with configurable Modbus start addresses.
-- RS232 and RS485 compatible.
-- USART DMA support for high baudrates with idle-line detection.
-- USB-CDC RTU master and Slave support for F103 Bluepill board. 
-- TCP master and slave support with examples for F429 and H743 MCUs
+### 2.2 并发与实时性
 
+- 基于 FreeRTOS 的任务并发处理
+- 支持同一 MCU 上多个 `modbusHandler_t` 实例
+- USART 中断模式 + DMA 模式双路径
 
-## File structure
+### 2.3 存储模型
+
+- 兼容传统共享内存模型
+- 支持按 Coil / DI / Holding / Input 分离内存区与起始地址
+- 支持非法地址异常响应（Exception Code 2）
+
+### 2.4 工程化能力
+
+- 多款开发板示例工程
+- Python / Notebook 测试脚本
+- 可读性较高的库目录（`MODBUS-LIB`）
+
+---
+
+## 3. 典型应用场景
+
+- PLC/传感器网关（RTU 从站 + TCP 主站桥接）
+- 产线设备控制器（多串口轮询）
+- 边缘采集节点（RS485 采集 + 以太网转发）
+- 教学与实验平台（通信协议课程、嵌入式课程）
+- 设备测试工装（配合 Python 工具快速回归）
+
+---
+
+## 4. 架构与线程模型
+
+```mermaid
+flowchart LR
+  APP[Application Layer] --> MBH[modbusHandler_t Instances]
+  MBH --> RTUTask[RTU Master/Slave Task]
+  MBH --> TCPTask[TCP Master/Slave Task]
+  RTUTask --> UART[USART or USART+DMA]
+  RTUTask --> RS485[RS232/RS485 Transceiver]
+  TCPTask --> LWIP[LWIP Stack]
+  APP --> MEM[Shared Memory or Isolated Regions]
+  MEM --> MBH
 ```
-├── LICENSE
+
+线程模型建议：
+
+- 主站任务独立运行，队列发送 telegram
+- 从站任务常驻监听，按功能码读取/写入数据区
+- 高速链路优先使用 DMA，降低中断负载
+
+---
+
+## 5. 仓库结构
+
+```text
+.
 ├── README.md
+├── TraditionalChineseREADME.md
+├── PROJECT_PROTOCOL.md
+├── config
+│   └── runtime.example.env
+├── docs
+│   ├── assets
+│   │   └── logo.svg
+│   └── modernization-roadmap.md
+├── MODBUS-LIB
+│   ├── Inc
+│   ├── Src
+│   └── Config
 ├── Examples
-    ├── ModbusBluepill --> STM32F103C8 USART Slave
-    ├── ModbusBluepillUSB --> STM32F103C8 USART + USB-CDC Master and Slave 
-    ├── ModbusF103 --> NUCLEO-F103RB Modbus Master and Slave
-    ├── ModbusF429 --> NUCLEO-F429ZI Modbus Slave 
-    ├── ModbusF429TCP --> NUCLEO-F429ZI Modbus TCP
-    ├── ModbusF429DMA --> NUCLEO-F429ZI Modbus RTU DMA master and slave 
-    ├── ModbusL152DMA --> NUCLEO-L152RE Modbus RTU DMA slave
-    ├── ModbusH743 --> NUCLEO-H743ZI Modbus Slave
-    ├── ModbusH743TCP --> NUCLEO-H743ZI Modbus TCP
-    ├── ModbusF303 --> NUCLEO-F303RE Modbus Slave
-    ├── ModbusSTM32F4-discovery --> STM32F4-discovery TouchGFX + Modbus Master
-    ├── ModbusWB55DMA --> P-NUCLEO-WB55 Modbus RTU DMA slave with RS485 
-    ├── ModbusG070 --> NUCLEO-G070RB Modbus Slave
-    ├── ModbusF030 --> STM32F030RCT6 USART Slave
-    ├── ModbusH503 --> STM32H503RBTx USART Slave
-    ├── ModbusG431 --> NUCLEO-G431KB USART Slave
-├── Script
-    ├── *.ipynb --> various master and slave Jupyter notebooks for testing
-├── MODBUS-LIB --> Library Folder
-    ├── Inc
-    │   └── Modbus.h 
-    ├── Config
-    │   └── ModbusConfigTemplate.h --> Configuration Template
-    └── Src
-        ├── Modbus.c 
-        └── UARTCallback.c
- 
-```
-## How to use the examples
-Examples provided for STM32CubeIDE Version: 1.8.0 https://www.st.com/en/development-tools/stm32cubeide.html.
-
-- Import the examples in the STM32Cube IDE from the system folder
-- Connect your NUCLEO board
-- Compile and start your debugging session!
-- If you need to adjust the Baud rate or any other parameter use the Cube-MX assistant (recommended). If you change the USART port you need to enable the interrupts for the selected USART. Check UARTCallback.c for more details.
-
-### Notes and Known issues :
-- The standard interrupt mode for Modbus RTU USART is suitable for 115200 bps or lower baud rates. 
-For Higher baud rates---tested up to 2 Mbps---it is recommended to use the DMA mode. Check the corresponding examples. It will require 
-extra configurations for the DMA channels in the Cube HAL.
-
-- The USB-CDC example supports only the Bluepill development board. It has not been validated with other development boards.
-To use this example, you need to activate USB-CDC in your ModbusConfig.h file.
-
-- The TCP examples have been validated with NUCLEO F429ZI and H743ZI. 
-To use these examples, you need to activate TCP in your ModbusConfig.h file.
- 
-- The HAL implementation for LWIP TCP of the CubeMX generates code that might not work if the cable is not connected from the very beginning.
-This is a known issue that can be solved manually changing the generated code as detailed here: https://community.st.com/s/question/0D50X0000CDolzDSQR/ethernet-does-not-work-if-uc-starts-with-the-cable-disconnected
-
-Check the TCP example for the NUCLEO F429, which includes the manual modifications. 
-
-## How to port to your own MCU
-- Create a new project in STM32Cube IDE for your MCU
-- Enable FreeRTOS CMSIS_V2 in the middleware section of Cube-MX
-- Configure a USART and activate the global interrupt
-- If you are using the DMA mode for USART, configure the DMA requests for RX and TX
-- Configure the `Preemption priority` of USART interrupt to a lower priority (5 or a higher number for a standard configuration) than your FreeRTOS scheduler. This parameter is changed in the NVIC configuration pane.
-- Import the Modbus library folder (MODBUS-LIB) using drag-and-drop from your host operating system to your STM32Cube IDE project
-- When asked, choose link folders and files
-- Update the include paths in the project's properties to include the `Inc` folder of MODBUS-LIB folder
-- Create a ModbusConfig.h using the ModbusConfigTemplate.h and add it to your project in your include path
-- Instantiate a new global modbusHandler_t and follow the examples provided in the repository 
-- `Note:` If your project uses the USART interrupt service for other purposes you have to modify the UARTCallback.c file accordingly
-
-
-## Slave Memory Configuration
-
-The library supports two memory models for the slave. Both are configured in `main.c` (or equivalent application file).
-
-### Option 1 — Shared memory (legacy, backward-compatible)
-
-All function codes (FC1/2/3/4/5/6/15/16) share a single `uint16_t` array. Coil addresses map to bits of the array; register addresses map to words. This is the default mode and requires no changes to existing code.
-
-```c
-uint16_t ModbusDATA[8]; // shared by all function codes
-
-ModbusH.uModbusType = MB_SLAVE;
-ModbusH.port        = &huart2;
-ModbusH.u8id        = 1;
-ModbusH.u16timeOut  = 1000;
-ModbusH.EN_Port     = NULL;
-ModbusH.u16regs     = ModbusDATA;
-ModbusH.u16regsize  = sizeof(ModbusDATA) / sizeof(ModbusDATA[0]);
-ModbusH.xTypeHW     = USART_HW;
+│   ├── ModbusBluepill
+│   ├── ModbusBluepillUSB
+│   ├── ModbusF103
+│   ├── ModbusF429 / ModbusF429TCP / ModbusF429DMA
+│   ├── ModbusH743 / ModbusH743TCP
+│   ├── ModbusG070 / ModbusG431 / ModbusH503 / ...
+│   └── ModbusSTM32F4-discovery
+└── Script
+    ├── MasterRead.ipynb
+    ├── MasterWrite.ipynb
+    ├── SlaveServer.ipynb
+    ├── SlaveServer2.ipynb
+    └── SlaveServerSerial.py
 ```
 
-### Option 2 — Separate memory regions with configurable start addresses
+---
 
-Each data type has its own independent `uint16_t` array and its own Modbus start address. This enables standard Modbus address mapping (e.g. coils at 0, discrete inputs at 10001, holding registers at 40001) or any custom partitioning. When any of the region pointers is set, that function code uses the dedicated region instead of `u16regs`.
+## 6. 快速开始
 
-```c
-// Independent arrays per data type
-uint16_t CoilsDATA[2];     // 32 coils,  Modbus addresses   0 –  31
-uint16_t DiDATA[2];        // 32 DI,     Modbus addresses 100 – 131
-uint16_t HoldingDATA[4];   // 4 HR,      Modbus addresses 200 – 203
-uint16_t InputDATA[4];     // 4 IR,      Modbus addresses 300 – 303
+### 6.1 开发环境
 
-ModbusH.uModbusType = MB_SLAVE;
-ModbusH.port        = &huart2;
-ModbusH.u8id        = 1;
-ModbusH.u16timeOut  = 1000;
-ModbusH.EN_Port     = NULL;
-ModbusH.u16regs     = NULL;  // not used when separate regions are configured
-ModbusH.u16regsize  = 0;
-ModbusH.xTypeHW     = USART_HW;
+- STM32CubeIDE（建议 1.8+，更高版本亦可）
+- STM32CubeMX（集成于 IDE）
+- Python 3.9+
+- `pymodbus`（用于上位机测试）
 
-// Coils — FC1, FC5, FC15
-ModbusH.u16coils            = CoilsDATA;
-ModbusH.u16coilsStartAdd    = 0;
-ModbusH.u16coilsNregs       = 2;
+### 6.2 最短启动路径（推荐）
 
-// Discrete Inputs — FC2
-ModbusH.u16discreteInputs          = DiDATA;
-ModbusH.u16discreteInputsStartAdd  = 100;
-ModbusH.u16discreteInputsNregs     = 2;
+1. 先导入 `Examples/ModbusF103` 或 `Examples/ModbusG431`
+2. 编译并下载到开发板
+3. 在 `main.c` 中确认从站地址、寄存器映射
+4. 使用 `Script/SlaveServerSerial.py` 或 `pymodbus` 客户端验证读写
 
-// Holding Registers — FC3, FC6, FC16
-ModbusH.u16holdingRegs          = HoldingDATA;
-ModbusH.u16holdingRegsStartAdd  = 200;
-ModbusH.u16holdingRegsNregs     = 4;
+---
 
-// Input Registers — FC4
-ModbusH.u16inputRegs          = InputDATA;
-ModbusH.u16inputRegsStartAdd  = 300;
-ModbusH.u16inputRegsNregs     = 4;
-```
+## 7. 配置说明
 
-With separate regions each block type responds only to its own address range and returns exception code 2 (Illegal Data Address) for any address outside it. Memory is fully isolated between blocks.
+### 7.1 库配置文件
 
-A fully working example using separate memory regions is available under `Examples/ModbusG431` (NUCLEO-G431KB).
+将 `MODBUS-LIB/Config/ModbusConfigTemplate.h` 复制为工程内 `ModbusConfig.h` 并按目标硬件打开宏：
 
-## Recommended Modbus Master and Slave testing and development tools for Linux and Windows
+- `ENABLE_USB_CDC`（USB-CDC）
+- `ENABLE_TCP`（Modbus TCP）
+- `ENABLE_USART_DMA`（USART DMA）
 
-### NEW MCP server exposing a Modbus Master for agents and AI assisted development
-https://github.com/alejoseb/ModbusMCP
+### 7.2 运行参数模板
 
+新增 `config/runtime.example.env` 作为本地化配置模板，建议在 CI/部署中通过环境变量注入：
 
-### Master and slave Python library
+- 串口端口、波特率、超时
+- Modbus TCP 主机/端口
+- 示例脚本 Slave 地址等
 
-Linux/Windows: https://github.com/riptideio/pymodbus
+### 7.3 示例脚本配置
 
-### Master client Qmodbus
-Linux:    https://launchpad.net/~js-reynaud/+archive/ubuntu/qmodbus
+`Script/SlaveServerSerial.py` 已支持通过环境变量覆盖默认参数：
 
-Windows:  https://sourceforge.net/projects/qmodbus/
+- `MODBUS_SERIAL_PORT`
+- `MODBUS_SERIAL_BAUDRATE`
+- `MODBUS_SERIAL_TIMEOUT`
+- `MODBUS_SLAVE_ID`
+- `MODBUS_PRINT_INTERVAL`
 
-### Slave simulator
-Linux: https://sourceforge.net/projects/pymodslave/
+---
 
-Windows: https://sourceforge.net/projects/modrssim2/
+## 8. 示例导入与运行
 
-## TODOs:
-- ~~Implement isolated memory spaces for coils, inputs and holding registers.~~ Separate memory regions with configurable start addresses implemented and backward-compatible with legacy shared memory model.
-- Implement wrapper functions for Master function codes. Currently, telegrams are defined manually. 
-- Improve function documentation
-- ~~MODBUS TCP implementation improvement to support multiple clients and TCP session management~~ (10/24/2021)
-- ~~Improve the queue for data reception; the current method is too heavy it should be replaced with a simple buffer, a stream, or another FreeRTOS primitive.~~ Solved Queue replaced by a Ring Buffer (03/19/2021)
-- ~~Test with Rs485 transceivers (implemented but not tested)~~ Verified with MAX485 transceivers (01/03/2021)
-- ~~MODBUS TCP implementation~~ (28/04/2021)
+### 8.1 导入步骤
+
+1. 在 STM32CubeIDE 选择 `Import > Existing Projects into Workspace`
+2. 指向 `Examples/` 下目标工程目录
+3. 勾选 `Copy projects into workspace`（可选）
+4. 编译后启动调试会话
+
+### 8.2 串口与中断注意事项
+
+- 使用 RTU 时必须确认 USART 全局中断已开启
+- DMA 模式需同时配置 RX/TX DMA 通道
+- USART 中断优先级应低于（数值大于等于）RTOS 关键调度优先级
+
+### 8.3 TCP 注意事项
+
+- 需在 `ModbusConfig.h` 中启用 TCP 相关宏
+- 某些 LWIP 初始化代码在网线插拔场景下需手工修正
+
+---
+
+## 9. 测试脚本说明
+
+### 9.1 Notebook
+
+Notebook 默认演示本地/局域网测试，已将历史硬编码 IP 替换为可移植示例地址。
+
+### 9.2 Python 串口从站
+
+`Script/SlaveServerSerial.py` 已重构为可配置启动：
+
+- 默认串口：`COM6`
+- 默认波特率：`115200`
+- 支持环境变量覆盖
+- 启动时打印运行配置，便于排错
+
+---
+
+## 10. 与基础版本的差异
+
+当前仓库已完成以下工程化调整：
+
+- 重构首页文档为中文主导、英文辅助说明
+- 新增项目 Logo 与统一命名
+- 移除个人赞助入口与捐赠链接
+- 新增项目协议文件 `PROJECT_PROTOCOL.md`
+- 新增配置模板 `config/runtime.example.env`
+- 将 Python 串口脚本改为环境变量驱动
+- 清理示例文件中的本机绝对路径与私有网络地址
+- 增加系统化改造路线图 `docs/modernization-roadmap.md`
+
+---
+
+## 11. 版本规划
+
+- `v1.x`: 稳定维护现有 RTU/TCP/USB-CDC 核心功能
+- `v2.x`: 提供更完善的主站功能码包装接口与测试覆盖
+- `v3.x`: 引入更标准化的配置中心与设备档案模型
+
+详见 `docs/modernization-roadmap.md`。
+
+---
+
+## 12. 开发协议与许可
+
+- 开发约定、分支规范、配置安全规范：见 `PROJECT_PROTOCOL.md`
+- 开源许可：见 `LICENSE`
+- 如需追踪历史兼容关系，可对照上游公开仓库的协议实现
+
