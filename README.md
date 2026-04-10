@@ -262,3 +262,18 @@ Notebook 默认演示本地/局域网测试，已将历史硬编码 IP 替换为
 - 开源许可：见 `LICENSE`
 - 如需追踪历史兼容关系，可对照上游公开仓库的协议实现
 
+## Baseline Maintenance
+
+### Environment
+
+- Put runtime credentials in environment variables.
+- Use `.env.example` as the configuration template.
+
+### CI
+
+- `baseline-ci.yml` provides a unified pipeline with `lint + build + test + secret scan`.
+
+### Repo Hygiene
+
+- Keep generated files (`dist/`, `build/`, `__pycache__/`, `.idea/`, `.DS_Store`) out of version control.
+
